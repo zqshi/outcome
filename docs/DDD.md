@@ -1,6 +1,6 @@
 # Outcome 领域驱动设计（DDD）方案
 
-版本 0.1 · 与 [SPEC.md](SPEC.md) v0.2 配套 · 更新：2026-10-14
+版本 0.2 · 与 [SPEC.md](SPEC.md) v0.3 配套 · 更新：2026-10-14
 
 本文件定义 Outcome 的战略设计（统一语言、子域、限界上下文、上下文映射）与战术设计（聚合、不变量、领域事件、仓储、防腐层），并给出跨上下文一致性、并发幂等与部署映射。运行时行为契约以 SPEC.md 为准，本文件解释"为什么这样切分"以及"实现应如何组织"。
 
@@ -25,7 +25,7 @@
 | 报告 | 在截点冻结的范围+公式版本+基准/任务快照 | Report | 价值 |
 | 信号 | 观测规则触发的质量异常，可复发、不可改写业务判定 | Signal | 观测 |
 | 评测集版本 | 样本+标准+授权的不可变快照 | DatasetVersion | 评测 |
-| 独立复核 | 由非提交人核验标注，分歧进入第三方仲裁 | Review | 评测 |
+| 独立复核 | 由与提交谱系独立的主体（人或校准过的复核 Agent）核验标注，分歧进入仲裁 | Review | 评测 |
 | 实验 | 冻结输入（数据/样本/标准/执行版本）的方案比较 | Experiment | 实验 |
 | 在线决策 | 按冻结规则对真实事件做出的抽样与执行决定，未入选也留记录 | OnlineDecision | 在线决策 |
 | 作业 | 一次在线评测/执行的可重试运行单元 | Job | 在线决策 |
@@ -154,11 +154,11 @@
 | 元素 | 内容 |
 | --- | --- |
 | 聚合根 | Dataset（可变元数据）、Review（标注复核流程） |
-| 实体 | Sample、LabelSubmission、ReviewAssignment、Arbitration |
-| 值对象 | SampleSource（任务/尝试/标准/意图版本四元组）、Authorization、RubricRef |
-| 关键不变量 | 提交人 ≠ 复核人；分歧由第三方仲裁；样本授权、去重、独立标签齐备才允许发布 DatasetVersion；历史版本样本只读；同任务族不得同时泄漏到对照与保留测试；草稿变化使旧标签证据失效 |
-| 领域事件 | LabelSubmitted、ReviewAssigned、ReviewCompleted、ArbitrationDecided、DatasetVersionPublished |
-| 仓储 | DatasetRepository、ReviewRepository、DatasetVersionRepository（不可变存储） |
+| 实体 | Sample、LabelSubmission、ReviewAssignment、Arbitration、ReviewerProfile（谱系、校准状态、问责主体） |
+| 值对象 | SampleSource（任务/尝试/标准/意图版本四元组）、Authorization、RubricRef、LineageRef、CalibrationScore |
+| 关键不变量 | 提交与复核主体谱系不同；复核主体 MUST 满足资格（谱系隔离、可问责身份、金标准校准有效、抗女巫克隆、防注入——无真值写入与状态变更权限）；未校准克隆不计入独立标签；分歧由第三方仲裁；样本授权、去重、独立标签齐备且记录人工核验抽样覆盖率后才允许发布 DatasetVersion；历史版本样本只读；同任务族不得同时泄漏到对照与保留测试；草稿变化使旧标签证据失效 |
+| 领域事件 | LabelSubmitted、ReviewAssigned、ReviewCompleted、ReviewerCalibrated、ArbitrationDecided、DatasetVersionPublished |
+| 仓储 | DatasetRepository、ReviewRepository、DatasetVersionRepository（不可变存储）、ReviewerRepository |
 
 ### 4.6 实验 Experiment
 
@@ -294,3 +294,4 @@ infrastructure/（仓储实现、适配器、队列、时钟、ID 生成）─�
 4. **回流不产生真值**：在线结果只进待标注草稿，防止自动评分污染独立标签链。
 5. **不做全量事件溯源**：仅纠错链与作业迁移历史需要回放，其余用当前状态+审计，控制存储与复杂度。
 6. **调度重启可重建**：调度权威状态允许内存态，恢复依赖宿主对账+已记录作业；但已确认事件、成本与判定 MUST 持久（比 Symphony 更强的恢复承诺，因为 Outcome 记录经营事实）。
+7. **制衡约束谱系，不约束物种**：独立复核要防的是自证与利益重合，不是"人不够多"。故 Review 约束的是执行谱系隔离、校准与问责身份；Agent 可作为复核主体规模化承担初审，人收敛为金标准维护者、校准审计者、仲裁者与残余风险问责人；高风险与发布门禁强制保留人工路径。
