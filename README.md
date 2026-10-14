@@ -50,11 +50,15 @@ open index.html
 
 | 文件 | 内容 |
 | --- | --- |
-| [SPEC.md](SPEC.md) | 领域模型、事件契约、指标公式、权限与符合性要求 |
-| [ROADMAP.md](ROADMAP.md) | 实现阶段、验收门槛与产品演进方向 |
+| [PRODUCT.md](docs/PRODUCT.md) | 产品设计原理：设计立场、关键决策的原因与洞察、刻意不做什么、有效性验证指标 |
+| [SPEC.md](docs/SPEC.md) | 领域模型、事件契约、适配器契约、调度与对账、失败恢复、指标公式、权限与符合性矩阵 |
+| [DDD.md](docs/DDD.md) | 统一语言、限界上下文、聚合与不变量、上下文映射、防腐层与部署映射 |
+| [ROADMAP.md](docs/ROADMAP.md) | 实现阶段、验收门槛与产品演进方向 |
 | [index.html](index.html) | 自包含的交互参考原型 |
-| [prototype/README.md](prototype/README.md) | 原型运行、组件规则与验证方式 |
+| [prototype/README.md](prototype/README.md) | 原型运行与验证方式 |
 | [scripts/](scripts/) | 领域逻辑与集成交互验证脚本 |
+
+SPEC 的适配器契约、作业调度状态机、失败模型与参考算法在结构上参考了 [openai/symphony](https://github.com/openai/symphony) 的规范写法（仓库契约、认领状态机、先对账再分派、凭据隔离），并按 Outcome 的经营事实语义强化了持久化与恢复要求。
 
 规范定义应实现的行为，原型展示流程与交互。根目录的 `quality-*-module.js` 是独立模块样例，原型运行不依赖这些文件。
 
